@@ -191,7 +191,8 @@ class MLMSC_Model:
                             survived_all.append('-1')
                             survived_only.append('-1')
                         speciesNode = self.speciesTree.getNodeById(speciesId)
-                        node.name = speciesNode.name + str(len(Vec[speciesNode.name])+1)
+                        # add a underscore to separate species name and gene copy number
+                        node.name = speciesNode.name + "_" + str(len(Vec[speciesNode.name])+1)
                         Vec[speciesNode.name].append(node.name)
                     else:
                         node.name = ''
@@ -207,7 +208,6 @@ class MLMSC_Model:
                         n_genes += len(Vec[key])
 
                 # geneSkbioTreeTruncated = geneSkbioTreeTruncated.shear(all_names)
-
                 randomTree = geneSkbioTreeTruncated.copy(deep=True)
                 randomTree = randomTree.shear(names)
 
@@ -226,10 +226,10 @@ class MLMSC_Model:
 
                 for node in randomTree.tips():
                     tipNumber += 1
-                    node.name = node.name[0]
+                    node.name = node.name.split('_')[0]
                 for node in geneSkbioTreeTruncated.tips():
                     full_tip_num += 1
-                    node.name = node.name[0]
+                    node.name = node.name.split('_')[0]
                 # if singleTree:
                 #     for node in singleTree.tips():
                 #         single_tip_num += 1
