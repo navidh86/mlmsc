@@ -806,6 +806,7 @@ class HaplotypeTree:
                             # 1. create new node
                             newNode = skbio.tree.TreeNode()
                             newNode.name = 'd' + '_locus' + str(level) + '_event' + str(eventIndex)
+                            newNode.eventType = 'duplication'
                             # 2. change length
                             newHaplotypeTree.getSkbioTree().root().length = \
                                 event['eventHeight'] - newHaplotypeTree.getTreeHeight()
@@ -874,6 +875,7 @@ class HaplotypeTree:
                             # 1. create new node
                             newNode = skbio.tree.TreeNode()
                             newNode.name = 'd' + '_locus' + str(level) + '_event' + str(eventIndex)
+                            newNode.eventType = 'duplication'
                             # 2. change length
                             newHaplotypeTree.getSkbioTree().root().length = \
                                 event['eventHeight'] - newHaplotypeTree.getTreeHeight() + branchLength

@@ -36,7 +36,7 @@ class MLMSC_Model:
         return self.__randomState
 
     def run(self, inputFile, seedArgs, coalescentArgs, recombinationArgs, duplicationArgs, transferArgs, 
-        lossArgs, unlinkArgs, repeatNumber, hemiplasy, verbose):
+        lossArgs, unlinkArgs, repeatNumber, hemiplasy, verbose, notung):
         # set parameters
         self.setParameters(
             coalescent=coalescentArgs, 
@@ -47,7 +47,8 @@ class MLMSC_Model:
             unlink=unlinkArgs,
             repeat=repeatNumber,
             hemiplasy=hemiplasy,
-            verbose=verbose)
+            verbose=verbose,
+            notung=notung)
 
         # read a species tree from input file
         self.readSpeciesTree(inputFile)
@@ -78,6 +79,12 @@ class MLMSC_Model:
 
         if 'gene_tree_' + name + '.newick' not in files:
             f = open(outputDir + '/gene_tree_' + name + '.newick','w')
+            f.write('')
+            f.close()
+
+        
+        if notung and 'gene_tree_' + name + '.notung' not in files:
+            f = open(outputDir + '/gene_tree_' + name + '.notung','w')
             f.write('')
             f.close()
 
@@ -129,6 +136,8 @@ class MLMSC_Model:
             geneSkbioTreeTruncated = self.geneSkbioTree.copy(deep=True)
             geneSkbioTreeTruncated = self.cutTree(geneSkbioTreeTruncated)
 
+            geneSkbioTreeTruncated_og = geneSkbioTreeTruncated.deepcopy()
+
             if 'loss' in geneSkbioTreeTruncated.root().name: 
                 continue
             
@@ -137,6 +146,9 @@ class MLMSC_Model:
                 find_it = False
                 for node in geneSkbioTreeTruncated.traverse():
                     if 'loss' in node.name:
+                        og_node = geneSkbioTreeTruncated_og.find(node.name)
+                        og_node.eventType = 'loss'
+                        
                         find_it = True
                         node.parent.name = 'l_' + node.parent.name
                         children = []
@@ -164,11 +176,13 @@ class MLMSC_Model:
                         num_dup2 += 1
   
             geneSkbioTreeTruncated.prune()
+            geneSkbioTreeTruncated_og.prune()
 
             if not geneSkbioTreeTruncated:
                 continue
             else:
                 Vec = defaultdict(list)
+                Vec2 = defaultdict(list)
                 for node in self.speciesTree.getSkbioTree().tips():
                     Vec[node.name] = []
 
@@ -194,6 +208,16 @@ class MLMSC_Model:
                         # add a underscore to separate species name and gene copy number
                         node.name = speciesNode.name + "_" + str(len(Vec[speciesNode.name])+1)
                         Vec[speciesNode.name].append(node.name)
+                    else:
+                        node.name = ''
+
+                for node in geneSkbioTreeTruncated_og.traverse():
+                    if node in geneSkbioTreeTruncated_og.tips():
+                        speciesId = int(node.name.split('*')[0])
+                        speciesNode = self.speciesTree.getNodeById(speciesId)
+                        # add a underscore to separate species name and gene copy number
+                        node.name = speciesNode.name + "_" + str(len(Vec2[speciesNode.name])+1)
+                        Vec2[speciesNode.name].append(node.name)
                     else:
                         node.name = ''
 
@@ -230,6 +254,8 @@ class MLMSC_Model:
                 for node in geneSkbioTreeTruncated.tips():
                     full_tip_num += 1
                     node.name = node.name.split('_')[0]
+                for node in geneSkbioTreeTruncated_og.tips():
+                    node.name = node.name.split('_')[0]
                 # if singleTree:
                 #     for node in singleTree.tips():
                 #         single_tip_num += 1
@@ -265,6 +291,21 @@ class MLMSC_Model:
                             f.write(char)
                     f.close()
 
+                    ## Write Notung style tree
+                    if notung:
+                        f = open(outputDir + '/gene_tree_' + name + '.notung','a')
+
+                        string = notung_string(geneSkbioTreeTruncated_og, self.speciesTree.getSkbioTree())
+                        ### add the species tree at the end of the gene trees file
+                        string += f"[&&NOTUNG-SPECIES-TREE{str(self.speciesTree.getSkbioTree())[:-1]}]\n"
+
+                        for char in string:
+                            if char == "'":
+                                continue
+                            else:
+                                f.write(char)
+                        f.close()
+
                     if repeatNumber == 1:
                         print('gene tree:')    
                         print(geneSkbioTreeTruncated.ascii_art())
@@ -292,7 +333,7 @@ class MLMSC_Model:
 
         print('finished.')
     def setParameters(self, coalescent, recombination, duplication, transfer, loss, unlink,
-        repeat, hemiplasy, verbose):
+        repeat, hemiplasy, verbose, notung):
         if coalescent is None:
             raise MLMSC_Error('missing coalescent parameter')
         self.__parameters['coalescent'] = coalescent
@@ -328,6 +369,10 @@ class MLMSC_Model:
         if verbose is None:
             raise MLMSC_Error('missing verbose option')
         self.__parameters['verbose'] = verbose
+
+        if notung is None:
+            raise MLMSC_Error('missing notung option')
+        self.__parameters['notung'] = notung
 
     def readSpeciesTree(self, path):
         self.__speciesTree = SpeciesTree(randomState=self.randomState)

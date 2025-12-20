@@ -103,6 +103,11 @@ def readCommand(argv):
         '-v', '--verbose', type='int', dest='verbose',
         help=default('verbose option, 0 or 1'), metavar='VERBOSE',
         default=0)
+    
+    parser.add_option(
+        '--notung', dest='notung', action='store_true',
+        help='output files in Notung format too', metavar='NOTUNG',
+        default=False)
 
     options, otherjunk = parser.parse_args(argv)
     if len(otherjunk) != 0:
@@ -127,6 +132,7 @@ def readCommand(argv):
     args['lossArgs'] = options.lossArgs
     args['unlinkArgs'] = options.unlinkArgs
     args['repeatNumber'] = options.repeatNumber
+    args['notung'] = options.notung
 
     # hemiplasy option
     if options.hemiplasy != 0 and options.hemiplasy != 1:
